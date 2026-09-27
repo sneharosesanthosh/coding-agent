@@ -47,13 +47,19 @@ class LLMClient:
         self.model = model
         self.max_tokens = max_tokens
 
-    def send(self, messages: list[dict], system: str | None = None) -> LLMResponse:
+    def send(
+        self,
+        messages: list[dict],
+        system: str | None = None,
+        tools: list[dict] | None = None,
+    ) -> LLMResponse:
         """
         Send a conversation (list of {"role": ..., "content": ...} dicts) and
         get back a single assistant turn.
 
-        Phase 1 scope: plain text only, no tools yet. Phase 2 will extend this
-        method to accept a `tools=` argument and return tool_use blocks too.
+        Pass `tools=TOOL_SCHEMAS` to let Claude call tools; check
+        `response.stop_reason == "tool_use"` and read `response.raw.content`
+        for the tool_use blocks — the agent loop in agent.py does this.
         """
         kwargs = {
             "model": self.model,
@@ -62,6 +68,8 @@ class LLMClient:
         }
         if system:
             kwargs["system"] = system
+        if tools:
+            kwargs["tools"] = tools
 
         response = self._client.messages.create(**kwargs)
 
